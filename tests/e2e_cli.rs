@@ -1,0 +1,155 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (c) 2026 Fábio Henrique de Lima Silva (fhl.bsb@gmail.com) All rights reserved.
+
+//! CLI Black-Box Smoke Tests for nam-audio-pipe.
+//!
+//! Validates the binary's command-line interface via `std::process::Command`,
+//! using the `CARGO_BIN_EXE_nam-audio-pipe` environment variable injected by Cargo.
+
+use std::process::Command;
+
+fn binary() -> Command {
+    let path = env!("CARGO_BIN_EXE_nam-audio-pipe");
+    Command::new(path)
+}
+
+#[test]
+fn help_flag_exits_zero_and_prints_usage() {
+    let output = binary()
+        .arg("--help")
+        .output()
+        .expect("failed to execute binary");
+
+    assert!(output.status.success(), "expected exit code 0 from --help");
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        stdout.contains("Usage:"),
+        "--help should print usage information"
+    );
+    assert!(
+        stdout.contains("--model"),
+        "--help should list --model option"
+    );
+}
+
+#[test]
+fn diagnose_flag_exits_zero_and_prints_diagnostics() {
+    let output = binary()
+        .arg("--diagnose")
+        .output()
+        .expect("failed to execute binary");
+
+    assert!(
+        output.status.success(),
+        "expected exit code 0 from --diagnose"
+    );
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        stdout.contains("NAM-rs Diagnostic")
+            || stdout.contains("System Information")
+            || stdout.contains("Runtime State"),
+        "--diagnose should print diagnostic sections, got: {}",
+        stdout.lines().take(3).collect::<Vec<_>>().join(" | ")
+    );
+}
+
+#[test]
+fn diagnose_full_exits_zero() {
+    let output = binary()
+        .arg("--diagnose-full")
+        .output()
+        .expect("failed to execute binary");
+
+    assert!(
+        output.status.success(),
+        "expected exit code 0 from --diagnose-full"
+    );
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        stdout.contains("NAM-rs Diagnostic")
+            || stdout.contains("System Information")
+            || stdout.contains("Runtime State"),
+        "--diagnose-full should print diagnostic sections"
+    );
+}
+
+#[test]
+fn invalid_option_exits_with_error() {
+    let output = binary()
+        .arg("--nonexistent-flag-xyzzy")
+        .output()
+        .expect("failed to execute binary");
+
+    assert!(
+        !output.status.success(),
+        "expected non-zero exit code for invalid option"
+    );
+
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("Argument error")
+            || stderr.contains("unexpected")
+            || stderr.contains("error"),
+        "stderr should contain error message, got: {}",
+        stderr
+    );
+}
+
+#[test]
+fn invalid_gain_value_exits_with_error() {
+    let output = binary()
+        .args(["--input-gain", "notanumber"])
+        .output()
+        .expect("failed to execute binary");
+
+    assert!(
+        !output.status.success(),
+        "expected non-zero exit code for invalid gain"
+    );
+
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("Argument error"),
+        "stderr should contain 'Argument error', got: {}",
+        stderr
+    );
+}
+
+#[test]
+fn gain_out_of_range_exits_with_error() {
+    let output = binary()
+        .args(["--output-gain", "999"])
+        .output()
+        .expect("failed to execute binary");
+
+    assert!(
+        !output.status.success(),
+        "expected non-zero exit code for out-of-range gain"
+    );
+
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("out of range"),
+        "stderr should indicate out of range, got: {}",
+        stderr
+    );
+}
+
+#[test]
+fn no_args_prints_help_and_exits_zero() {
+    let output = binary().output().expect("failed to execute binary");
+
+    assert!(
+        output.status.success(),
+        "expected exit code 0 when invoked with no arguments"
+    );
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        stdout.contains("Usage:"),
+        "no-args invocation should print usage information"
+    );
+}
