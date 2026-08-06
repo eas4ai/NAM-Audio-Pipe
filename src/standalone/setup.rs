@@ -4,8 +4,11 @@
 //! Setup and initialization helpers for off-RT resources and SPSC channels.
 
 use crate::standalone::{cli, colors::Colorize};
+use neural_amp_modeler_rs::SystemSnapshot;
+use neural_amp_modeler_rs::common::diagnostics::{
+    ACTIVE_MODEL_INFO, ACTIVE_MODEL_NAME, ACTIVE_SAMPLE_RATE,
+};
 use neural_amp_modeler_rs::common::spsc::{self, ParamPayload, SpscChannels};
-use neural_amp_modeler_rs::diagnostics::SystemSnapshot;
 use neural_amp_modeler_rs::dsp::cabsim::adapter::CabSimAdapter;
 use neural_amp_modeler_rs::dsp::cabsim::conv::ConvEngine;
 use neural_amp_modeler_rs::dsp::cabsim::loader::CabSimIr;
@@ -42,19 +45,15 @@ pub fn load_initial_model(
         log::info!("{} Loading model...", "📂".cyan());
         match loader::load_and_build_model(path, sys, true, loader::LoadOptions::default()) {
             Ok(loaded) => {
-                if let Ok(mut name) = neural_amp_modeler_rs::diagnostics::ACTIVE_MODEL_NAME.write()
-                {
+                if let Ok(mut name) = ACTIVE_MODEL_NAME.write() {
                     *name = path.to_string_lossy().into_owned();
                 }
-                neural_amp_modeler_rs::diagnostics::ACTIVE_SAMPLE_RATE
-                    .store(loaded.sample_rate, Ordering::Relaxed);
+                ACTIVE_SAMPLE_RATE.store(loaded.sample_rate, Ordering::Relaxed);
 
                 architecture = loaded.architecture.clone();
 
                 let model_info = loaded.model_info(path);
-                if let Ok(mut info_guard) =
-                    neural_amp_modeler_rs::diagnostics::ACTIVE_MODEL_INFO.write()
-                {
+                if let Ok(mut info_guard) = ACTIVE_MODEL_INFO.write() {
                     *info_guard = Some(model_info);
                 }
 
@@ -101,7 +100,7 @@ pub fn load_initial_cabsim(
         None => return Ok(None),
     };
 
-    let active_sr = neural_amp_modeler_rs::diagnostics::ACTIVE_SAMPLE_RATE.load(Ordering::Relaxed);
+    let active_sr = ACTIVE_SAMPLE_RATE.load(Ordering::Relaxed);
     let target_rate = if active_sr > 0 { active_sr } else { 48000 };
     let partition_size = if buffer_size > 0 {
         buffer_size as usize

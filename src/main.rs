@@ -17,10 +17,8 @@
 use nam_audio_pipe::recording::{self, buffer};
 use nam_audio_pipe::standalone::{cli, colors::Colorize, pw_host, rt_setup, setup};
 
-use neural_amp_modeler_rs::diagnostics::{
-    SystemSnapshot,
-    logger::{LoggerConfig, NamLogger},
-};
+use neural_amp_modeler_rs::SystemSnapshot;
+use neural_amp_modeler_rs::common::diagnostics::logger::{LoggerConfig, NamLogger};
 use neural_amp_modeler_rs::math::activations::set_activation_tls;
 use neural_amp_modeler_rs::{common::spsc, common::spsc::ParamPayload};
 
@@ -62,13 +60,13 @@ fn main() -> anyhow::Result<()> {
     // 2. PREPARE THE AUDIO: Initialize PipeWire (the Linux sound system)
     // and calibrate internal "clocks" to ensure sound output without delays (latency).
     pipewire::init();
-    neural_amp_modeler_rs::diagnostics::set_host_library_version(pw_library_version());
+    neural_amp_modeler_rs::common::diagnostics::set_host_library_version(pw_library_version());
 
     // 2.1. IMMEDIATE DIAGNOSTIC EXITS: If the user requested an immediate diagnostic dump,
     // we print it to stdout and exit immediately with code 0 (without starting audio processing).
     if args.diagnose || args.diagnose_full {
-        let bundle = neural_amp_modeler_rs::diagnostics::DiagnosticBundle::capture()
-            .with_full(args.diagnose_full);
+        let bundle =
+            neural_amp_modeler_rs::DiagnosticBundle::capture().with_full(args.diagnose_full);
         println!("{}", bundle.render());
         unsafe {
             pipewire::deinit();
