@@ -27,8 +27,10 @@ use crate::recording::buffer::{
 };
 use crate::recording::wav_header::{build_wav_header, resolve_available_filename};
 
-// Note: Trimming of initial/final silence is handled downstream by post-processing tooling.
-// The disk writer streams raw audio blocks as received from the real-time buffer.
+// Silence trimming is performed in the RT thread (process.rs): audio blocks are only
+// enqueued when the noise gate is open (n_pw > 0). The disk writer receives only
+// blocks containing real signal — never silence, never padding.
+// The gate is always active regardless of DSP configuration (architectural invariant).
 
 /// Asynchronous WAV writer using `tokio_uring` for purely zero-blocking disk I/O.
 ///

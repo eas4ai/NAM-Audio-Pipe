@@ -111,26 +111,6 @@ pub fn process_dsp_buffer(
                         *recording_meta_sent = true;
                     }
 
-                    if let Some(producer) = recording_producer {
-                        // Swap out the reusable recording block with a fresh
-                        // uninitialized one, avoiding 16 KiB of memset per
-                        // quantum in the RT hot path.
-                        // Measured: ~12 MB/s saved at 750 callbacks/s.
-                        let mut block =
-                            std::mem::replace(recording_block, AlignedBlock::new_uninit());
-                        let interleaved_len = n_samples * 2;
-                        if interleaved_len <= MAX_BLOCK_SIZE {
-                            for i in 0..n_samples {
-                                block.data[i * 2] = samples_l[i];
-                                block.data[i * 2 + 1] = samples_r[i];
-                            }
-                            block.valid_len = interleaved_len;
-                            if producer.push(RingPayload::Audio(block)).is_err() {
-                                OVERRUN_COUNT.fetch_add(1, Ordering::Relaxed);
-                            }
-                        }
-                    }
-
                     let should_measure = (*frame_count & 0xF) == 0;
                     *frame_count = frame_count.wrapping_add(1);
 
@@ -146,14 +126,47 @@ pub fn process_dsp_buffer(
                         }
                     }
 
-                    capture_dsp_pipeline(
+                    let n_pw = capture_dsp_pipeline(
                         samples_l,
                         samples_r,
                         n_samples,
                         context,
-                        buffers,
+                        DspBuffers {
+                            resamp_mid_l: &mut *buffers.resamp_mid_l,
+                            resamp_mid_r: &mut *buffers.resamp_mid_r,
+                            resamp_out_l: &mut *buffers.resamp_out_l,
+                            resamp_out_r: &mut *buffers.resamp_out_r,
+                            model_out_l: &mut *buffers.model_out_l,
+                            model_out_r: &mut *buffers.model_out_r,
+                            os_in_l: &mut *buffers.os_in_l,
+                            os_in_r: &mut *buffers.os_in_r,
+                            os_model_l: &mut *buffers.os_model_l,
+                            os_model_r: &mut *buffers.os_model_r,
+                        },
                         current_host_rate,
                     );
+
+                    if let Some(producer) = recording_producer
+                        && n_pw > 0
+                    {
+                        // Swap out the reusable recording block with a fresh
+                        // uninitialized one, avoiding 16 KiB of memset per
+                        // quantum in the RT hot path.
+                        // Measured: ~12 MB/s saved at 750 callbacks/s.
+                        let mut block =
+                            std::mem::replace(recording_block, AlignedBlock::new_uninit());
+                        let interleaved_len = n_pw * 2;
+                        if interleaved_len <= MAX_BLOCK_SIZE {
+                            for i in 0..n_pw {
+                                block.data[i * 2] = buffers.resamp_out_l[i];
+                                block.data[i * 2 + 1] = buffers.resamp_out_r[i];
+                            }
+                            block.valid_len = interleaved_len;
+                            if producer.push(RingPayload::Audio(block)).is_err() {
+                                OVERRUN_COUNT.fetch_add(1, Ordering::Relaxed);
+                            }
+                        }
+                    }
 
                     if should_measure {
                         let elapsed_nanos = rt_setup::rdtsc_nanos().wrapping_sub(start_nanos);

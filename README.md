@@ -3,13 +3,13 @@ SPDX-License-Identifier: GPL-3.0-or-later
 Copyright (c) 2026 Fábio Henrique de Lima Silva (fhl.bsb@gmail.com) All rights reserved.
 -->
 
-# NAM-Audio-Pipe 0.1.0
+# NAM-Audio-Pipe
 
 ![License](https://img.shields.io/badge/License-GPL--3.0--or--later-blue.svg) ![Rust](https://img.shields.io/badge/Rust-orange.svg) ![PipeWire](https://img.shields.io/badge/PipeWire-%E2%89%A5%200.3-brightgreen.svg) ![Latency](https://img.shields.io/badge/Latency-Sub--ms-red.svg) ![RT-Safe](https://img.shields.io/badge/RT--Safe-Zero--Alloc-brightgreen.svg) ![SIMD](https://img.shields.io/badge/SIMD-AVX2%20%7C%20AVX--512-blueviolet.svg) ![Recording](https://img.shields.io/badge/Recording-WAV%2032bit%20Float-yellow.svg)
 
 **NAM-Audio-Pipe** is an ultra-low latency, real-time standalone PipeWire host application for [Neural Amp Modeler (NAM)](https://www.neuralampmodeler.com/) simulation on Linux.
 
-It directly embeds `NeuralAmpModeler-rs` as its core neural DSP engine, inheriting all of its real-time guarantees: **zero heap allocations**, **zero locks**, **zero blocking system calls** on the audio thread, `x86-64-v3` (AVX2/FMA) baseline SIMD vectorization, AVX-512 multiversioning, and exact numerical parity against canonical C++ NAMCore and double-precision f64 reference oracles.
+It directly embeds [`NeuralAmpModeler-rs`](https://github.com/fabiohl/NeuralAmpModeler-rs) as its core neural DSP engine, inheriting all of its real-time guarantees: **zero heap allocations**, **zero locks**, **zero blocking system calls** on the audio thread, `x86-64-v3` (AVX2/FMA) baseline SIMD vectorization, AVX-512 multiversioning, and exact numerical parity against canonical C++ NAMCore and double-precision f64 reference oracles.
 
 Designed for live performance, automated studio routing, and headless Linux audio setups, NAM-Audio-Pipe processes audio directly over PipeWire graphs and provides built-in lock-free 32-bit float WAV stream recording.
 
@@ -20,7 +20,7 @@ Designed for live performance, automated studio routing, and headless Linux audi
 ## ⚡ Key Strengths & Architectural Highlights
 
 * **Pure Rust & Native PipeWire Integration:** Built directly on top of `libpipewire-0.3` (via the `pipewire` crate), interfacing with the PipeWire daemon at native quantum sizes (down to 64 samples) with minimal overhead and zero translation layers.
-* **Inherited Neural Engine Excellence:** Powered by `NeuralAmpModeler-rs`, supporting WaveNet (A1/A2 standard & lite profiles), LSTM (1-layer and 2-layer topologies), ConvNet, Linear FIR, and partitioned FFT cabinet impulse responses (.wav).
+* **Inherited Neural Engine Excellence:** Powered by [`NeuralAmpModeler-rs`](https://github.com/fabiohl/NeuralAmpModeler-rs), supporting WaveNet (A1/A2 standard & lite profiles), LSTM (1-layer and 2-layer topologies), ConvNet, Linear FIR, and partitioned FFT cabinet impulse responses (.wav).
 * **Zero-Allocation RT Safety:** The audio callback thread runs with strict real-time determinism — no heap allocations, no mutex locks, and no blocking I/O on the hot path. Parameter updates and state transitions pass through lock-free SPSC channels with GC cascades.
 * **Concurrent Asynchronous WAV Recording:** Captures the raw input audio stream directly to disk without causing buffer underruns (xruns) or audio dropouts on the RT thread. Powered by Linux `tokio-uring` (io_uring) with automatic 4 GiB RIFF file segmentation (`_partN.wav`).
 * **Adaptive Compute (Auto-Slimming):** Automatically monitors host CPU pressure and safely downgrades multi-profile `.namb` models (`--slim auto`) during CPU spikes to maintain real-time audio playback without glitching.
@@ -105,20 +105,20 @@ For maximum performance in live setups, `NAM-Audio-Pipe` includes a 5-phase opti
 
 ### CLI Argument Reference
 
-| Option                   | Description                                                           | Default             |
-|:------------------------ |:--------------------------------------------------------------------- |:------------------- |
-| `-m, --model <FILE>`     | Path to `.nam` or `.namb` neural model file (supports `~`, `../`)     | *Optional (Bypass)* |
-| `-c, --cab <FILE>`       | Path to cabinet impulse response `.wav` file                          | *Optional (bypass)* |
-| `-i, --input-gain <DB>`  | Input gain staging in dB (`-20.0` to `+20.0`)                         | `0.0`               |
-| `-o, --output-gain <DB>` | Output gain staging in dB (`-20.0` to `+20.0`)                        | `0.0`               |
-| `-b, --buffer-size <N>`  | Quantum block size in samples (e.g. `64`, `256`, `512`; `0` for auto) | `256`               |
-| `--oversample <MODE>`    | Half-band oversampling mode (`off`, `2x`, `4x`)                       | `off`               |
-| `--activation <MODE>`    | Math precision mode: `standard` (exact) or `fast` (Padé polynomial)   | `standard`          |
-| `--slim <MODE>`          | Adaptive compute override: `auto` (CPU-gated), `full`, `lite`         | `auto`              |
-| `--record`               | Enables lock-free 32-bit float WAV recording of raw capture audio     | `false`             |
-| `--diagnose`             | Emits technical system diagnostic bundle and exits                    | `false`             |
-| `--diagnose-full`        | Emits diagnostic bundle with unredacted raw file paths and exits      | `false`             |
-| `-h, --help`             | Displays command-line help screen and exits                           | —                   |
+| Option                   | Description                                                                                                                    | Default             |
+|:------------------------ |:------------------------------------------------------------------------------------------------------------------------------ |:------------------- |
+| `-m, --model <FILE>`     | Path to `.nam` or `.namb` neural model file (supports `~`, `../`)                                                              | *Optional (Bypass)* |
+| `-c, --cab <FILE>`       | Path to cabinet impulse response `.wav` file                                                                                   | *Optional (bypass)* |
+| `-i, --input-gain <DB>`  | Input gain staging in dB (`-20.0` to `+20.0`)                                                                                  | `0.0`               |
+| `-o, --output-gain <DB>` | Output gain staging in dB (`-20.0` to `+20.0`)                                                                                 | `0.0`               |
+| `-b, --buffer-size <N>`  | Quantum block size in samples (e.g. `64`, `256`, `512`; `0` for auto)                                                          | `256`               |
+| `--oversample <MODE>`    | Half-band oversampling mode (`off`, `2x`, `4x`)                                                                                | `off`               |
+| `--activation <MODE>`    | Math precision mode: `standard` (exact) or `fast` (Padé polynomial)                                                            | `standard`          |
+| `--slim <MODE>`          | Adaptive compute override: `auto` (CPU-gated), `full`, `lite`                                                                  | `auto`              |
+| `--record`               | Enables lock-free 32-bit float WAV recording of processed (neural + cab) audio via `io_uring` (silences trimmed by noise gate) | `false`             |
+| `--diagnose`             | Emits technical system diagnostic bundle and exits                                                                             | `false`             |
+| `--diagnose-full`        | Emits diagnostic bundle with unredacted raw file paths and exits                                                               | `false`             |
+| `-h, --help`             | Displays command-line help screen and exits                                                                                    | —                   |
 
 ---
 
@@ -166,6 +166,12 @@ nam-audio-pipe \
 ```
 
 *Creates timestamped `capture_YYYYMMDD_HHMMSS.wav` files in the current working directory (32-bit float stereo PCM at PipeWire sample rate, automatically splitting into `_partN.wav` if reaching the 4 GiB RIFF size limit).*
+
+> [!NOTE]
+> **Universal Noise Gate Behavior & Recording Impact**
+> The Noise Gate is active in **all operational modes** of `NAM-Audio-Pipe` (with or without a `.nam` neural model, with or without a cabinet IR). There is no "gate off" mode — this is an intentional architectural decision: the gate is part of the application's core value proposition, ensuring playing pauses do not produce residual background noise at the output.
+>
+> **Recording with `--record`:** Audio is recorded **post-DSP** (neural model + cabinet IR + gain staging), matching exactly what is monitored on hardware output. Only blocks processed while the noise gate is open (`n_pw > 0`) are enqueued for recording. Silence before, during, and after performance is automatically trimmed in real-time with zero RT thread overhead.
 
 #### Full Production Command
 
