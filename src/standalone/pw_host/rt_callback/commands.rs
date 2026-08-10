@@ -71,7 +71,7 @@ pub fn receive_commands(
                 if let Some(model) = active_model_l {
                     model.inject_rt_status(Arc::clone(rt_status_for_process));
                     if let StaticModel::WavenetDyn(w) = model.as_ref() {
-                        adaptive.set_wavenet_full_ch(w.ch);
+                        adaptive.set_wavenet_full_ch(w.ch, model.is_slimmable_capable());
                     }
                 }
                 if let Some(old) = std::mem::replace(active_model_r, model_r) {
