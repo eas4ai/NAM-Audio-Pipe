@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (c) 2026 Fábio Henrique de Lima Silva (fhl.bsb@gmail.com) All rights reserved.
 set -x
 RUST_BACKTRACE=full timeout --signal=SIGINT 3s nam-audio-pipe -m "../NeuralAmpModeler-rs/tests/fixtures/models/a2_dynamic_blended_ch3.nam"
 RUST_BACKTRACE=full timeout --signal=SIGINT 3s nam-audio-pipe -m "../NeuralAmpModeler-rs/tests/fixtures/models/a2_dynamic_gated_ch8.nam"

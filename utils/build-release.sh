@@ -295,7 +295,6 @@ if os.environ.get("NAM_FIXTURES_DIR"):
     search_dirs.append(os.environ["NAM_FIXTURES_DIR"])
 search_dirs.extend([
     "../third-party/nam_t3k",
-    "../NeuralAmpModeler-rs/tests/fixtures/models",
     "tests/fixtures/models"
 ])
 

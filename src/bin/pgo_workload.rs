@@ -47,9 +47,6 @@ fn resolve_workload_models() -> Vec<PathBuf> {
             dirs.push(PathBuf::from(dir));
         }
         dirs.push(PathBuf::from("../third-party/nam_t3k"));
-        dirs.push(PathBuf::from(
-            "../NeuralAmpModeler-rs/tests/fixtures/models",
-        ));
         dirs.push(PathBuf::from("tests/fixtures/models"));
         dirs
     };
@@ -158,9 +155,6 @@ fn resolve_ir_path() -> Option<PathBuf> {
             dirs.push(PathBuf::from(dir));
         }
         dirs.push(PathBuf::from("../third-party/nam_t3k"));
-        dirs.push(PathBuf::from(
-            "../NeuralAmpModeler-rs/tests/fixtures/models",
-        ));
         dirs.push(PathBuf::from("tests/fixtures/models"));
         dirs
     };
