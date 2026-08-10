@@ -293,16 +293,13 @@ import os, sys
 search_dirs = []
 if os.environ.get("NAM_FIXTURES_DIR"):
     search_dirs.append(os.environ["NAM_FIXTURES_DIR"])
-search_dirs.extend([
-    "../third-party/nam_t3k",
-    "tests/fixtures/models"
-])
+search_dirs.append("tests/fixtures/models")
 
+# License-safe in-repo fixtures only (tests/fixtures/models/).
 categories = [
-    ("WaveNet A1 Standard", ["BossWN-standard.nam", "wavenet_a1_standard.nam", "BossWN-lite.nam", "wavenet.nam"]),
-    ("WaveNet A2 / Container", ["wavenet_a2_container.nam", "a2_example.nam", "slimmable_container.nam", "wavenet_a2_max.nam", "wavenet_a2_full.nam"]),
-    ("LSTM 1x16", ["BossLSTM-1x16.nam", "lstm_1x16.nam", "lstm.nam", "lstm_3x8.nam", "BossLSTM-2x8.nam"]),
-    ("WaveNet Custom", ["APP-EVH-Stealth100-Dialled-xSTD.nam", "EVH-5150-Lite.nam", "BossWN-feather.nam", "SLAMMIN_MARSHALL_J45_VN9_TREBLEBOOSTER_P4_C.nam"])
+    ("WaveNet A1 Standard", ["wavenet_a1_standard.nam"]),
+    ("WaveNet A2", ["a2_example.nam"]),
+    ("LSTM", ["lstm.nam"]),
 ]
 
 resolved = []

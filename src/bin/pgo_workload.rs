@@ -46,51 +46,15 @@ fn resolve_workload_models() -> Vec<PathBuf> {
         if let Ok(dir) = std::env::var("NAM_FIXTURES_DIR") {
             dirs.push(PathBuf::from(dir));
         }
-        dirs.push(PathBuf::from("../third-party/nam_t3k"));
         dirs.push(PathBuf::from("tests/fixtures/models"));
         dirs
     };
 
+    // License-safe in-repo fixtures only (tests/fixtures/models/).
     let topology_categories: &[(&str, &[&str])] = &[
-        (
-            "WaveNet A1 Standard",
-            &[
-                "BossWN-standard.nam",
-                "wavenet_a1_standard.nam",
-                "BossWN-lite.nam",
-                "wavenet.nam",
-            ],
-        ),
-        (
-            "WaveNet A2 / SlimmableContainer",
-            &[
-                "wavenet_a2_container.nam",
-                "a2_example.nam",
-                "slimmable_container.nam",
-                "wavenet_a2_max.nam",
-                "wavenet_a2_full.nam",
-            ],
-        ),
-        (
-            "LSTM 1x16",
-            &[
-                "BossLSTM-1x16.nam",
-                "lstm_1x16.nam",
-                "lstm.nam",
-                "lstm_3x8.nam",
-                "BossLSTM-2x8.nam",
-            ],
-        ),
-        (
-            "WaveNet Custom",
-            &[
-                "APP-EVH-Stealth100-Dialled-xSTD.nam",
-                "EVH-5150-Lite.nam",
-                "BossWN-feather.nam",
-                "wavenet_official.nam",
-                "SLAMMIN_MARSHALL_J45_VN9_TREBLEBOOSTER_P4_C.nam",
-            ],
-        ),
+        ("WaveNet A1 Standard", &["wavenet_a1_standard.nam"]),
+        ("WaveNet A2", &["a2_example.nam"]),
+        ("LSTM", &["lstm.nam"]),
     ];
 
     for (cat_name, candidates) in topology_categories {
@@ -154,20 +118,17 @@ fn resolve_ir_path() -> Option<PathBuf> {
         if let Ok(dir) = std::env::var("NAM_FIXTURES_DIR") {
             dirs.push(PathBuf::from(dir));
         }
-        dirs.push(PathBuf::from("../third-party/nam_t3k"));
         dirs.push(PathBuf::from("tests/fixtures/models"));
         dirs
     };
 
-    let candidates = [
-        "M25 UR 1960TV 4x12 M201 1.75in 0.0in VP28.wav",
-        "DELUXE REVERB OXFORD - BIG - 48 24.wav",
-    ];
-
     for dir in &search_dirs {
-        for name in &candidates {
-            let path = dir.join(name);
-            if path.exists() {
+        let Ok(entries) = std::fs::read_dir(dir) else {
+            continue;
+        };
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.extension().and_then(|s| s.to_str()) == Some("wav") {
                 return Some(path);
             }
         }
@@ -192,7 +153,7 @@ fn main() {
     let block_size = 64usize;
     let total_simulation_seconds = 10.0f64;
 
-    let base_weights = [0.40f64, 0.30f64, 0.20f64, 0.10f64];
+    let base_weights = [0.45f64, 0.35f64, 0.20f64];
     let total_weight: f64 = base_weights.iter().take(models.len()).sum();
 
     for (idx, model_path) in models.iter().enumerate() {
